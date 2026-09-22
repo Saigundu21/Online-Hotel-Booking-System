@@ -22,9 +22,6 @@ MySQL
 - JDBC
 - MySQL
 - Maven
-- HTML
-- CSS
-- JavaScript
 - Git
 - GitHub
 - Postman
