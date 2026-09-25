@@ -105,4 +105,3 @@ public class Booking {
         this.bookingStatus = bookingStatus;
     }
 }
-
