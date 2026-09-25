@@ -15,18 +15,34 @@ public class JdbcUtil {
             System.getenv("HOTEL_DB_PASSWORD");
 
     public static Connection getConnection() throws SQLException {
+
         return DriverManager.getConnection(URL, USER, PASSWORD);
     }
 
     public static void main(String[] args) {
 
-        try (Connection connection = getConnection()) {
+        try {
 
-            System.out.println("Database connected successfully!");
+            // Load MySQL JDBC Driver
+            Class.forName("com.mysql.cj.jdbc.Driver");
+
+            // Connect to database
+            try (Connection connection = getConnection()) {
+
+                System.out.println("Database connected successfully!");
+
+            }
+
+        } catch (ClassNotFoundException e) {
+
+            System.out.println("MySQL JDBC Driver not found.");
+            e.printStackTrace();
 
         } catch (SQLException e) {
 
+            System.out.println("Database connection failed.");
             e.printStackTrace();
         }
     }
 }
+
