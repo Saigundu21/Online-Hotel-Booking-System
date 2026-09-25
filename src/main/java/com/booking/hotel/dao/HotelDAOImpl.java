@@ -17,31 +17,26 @@ import java.util.List;
 
 public class HotelDAOImpl implements HotelDAO {
 
-    // Records each hotel-table action. The {} placeholders are filled by the values passed after the message.
     private static final Logger logger = LoggerFactory.getLogger(HotelDAOImpl.class);
 
     private static final String SQL_INSERT_HOTEL =
-            "INSERT INTO hotel (location_id, name, description, address, city, state, "
-                    + "country, star_rating, amenities, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+            "INSERT INTO hotel (location_id, name, description, address, "
+                    + "star_rating, amenities, status) VALUES (?, ?, ?, ?, ?, ?, ?)";
 
     private static final String SQL_FIND_BY_ID =
             "SELECT * FROM hotel WHERE hotel_id = ?";
-
-    private static final String SQL_FIND_BY_CITY =
-            "SELECT * FROM hotel WHERE city = ?";
 
     private static final String SQL_FIND_ALL =
             "SELECT * FROM hotel";
 
     private static final String SQL_UPDATE =
             "UPDATE hotel SET location_id = ?, name = ?, description = ?, address = ?, "
-                    + "city = ?, state = ?, country = ?, star_rating = ?, amenities = ?, status = ? "
+                    + "star_rating = ?, amenities = ?, status = ? "
                     + "WHERE hotel_id = ?";
 
     private static final String SQL_DELETE =
             "DELETE FROM hotel WHERE hotel_id = ?";
 
-    // Inserts one row into the hotel table and stores the new hotel_id on the Hotel object.
     @Override
     public boolean create(Hotel hotel) throws SQLException {
         try (Connection connection = JdbcUtil.getConnection();
@@ -65,7 +60,6 @@ public class HotelDAOImpl implements HotelDAO {
         }
     }
 
-    // Selects the one hotel row whose hotel_id matches the given id.
     @Override
     public Hotel findById(long hotelId) throws SQLException {
         try (Connection connection = JdbcUtil.getConnection();
@@ -82,33 +76,11 @@ public class HotelDAOImpl implements HotelDAO {
                 return null;
             }
         }
-    }
-
-    // Selects every hotel row whose city matches the given city.
-    @Override
+    }@Override
     public List<Hotel> findByCity(String city) throws SQLException {
-        List<Hotel> hotels = new ArrayList<>();
-
-        try (Connection connection = JdbcUtil.getConnection();
-             PreparedStatement statement = connection.prepareStatement(SQL_FIND_BY_CITY)) {
-
-            statement.setString(1, city);
-
-            logger.debug("Selecting hotels in city {}", city);
-            try (ResultSet resultSet = statement.executeQuery()) {
-                while (resultSet.next()) {
-                    hotels.add(mapRow(resultSet));
-                }
-            }
-        }
-
-        if (hotels.isEmpty()) {
-            logger.warn("No hotels found in city {}", city);
-        }
-        return hotels;
+        return List.of();
     }
 
-    // Selects every row from the hotel table.
     @Override
     public List<Hotel> findAll() throws SQLException {
         List<Hotel> hotels = new ArrayList<>();
@@ -130,14 +102,13 @@ public class HotelDAOImpl implements HotelDAO {
         return hotels;
     }
 
-    // Updates location, name, description, address, city, state, country, rating, amenities, and status for this hotel_id.
     @Override
     public boolean update(Hotel hotel) throws SQLException {
         try (Connection connection = JdbcUtil.getConnection();
              PreparedStatement statement = connection.prepareStatement(SQL_UPDATE)) {
 
             setHotelColumns(statement, hotel);
-            statement.setLong(11, hotel.getHotelId());
+            statement.setLong(8, hotel.getHotelId());
 
             logger.debug("Updating hotel with id {}", hotel.getHotelId());
             int rows = statement.executeUpdate();
@@ -148,7 +119,6 @@ public class HotelDAOImpl implements HotelDAO {
         }
     }
 
-    // Deletes the hotel row whose hotel_id matches the given id.
     @Override
     public boolean delete(long hotelId) throws SQLException {
         try (Connection connection = JdbcUtil.getConnection();
@@ -164,7 +134,6 @@ public class HotelDAOImpl implements HotelDAO {
         }
     }
 
-    // Copies one hotel-table row into a Hotel. location_id is stored on a Location object.
     private Hotel mapRow(ResultSet resultSet) throws SQLException {
         Hotel hotel = new Hotel();
         hotel.setHotelId(resultSet.getLong("hotel_id"));
@@ -179,9 +148,6 @@ public class HotelDAOImpl implements HotelDAO {
         hotel.setName(resultSet.getString("name"));
         hotel.setDescription(resultSet.getString("description"));
         hotel.setAddress(resultSet.getString("address"));
-        hotel.setCity(resultSet.getString("city"));
-        hotel.setState(resultSet.getString("state"));
-        hotel.setCountry(resultSet.getString("country"));
         hotel.setStarRating(resultSet.getBigDecimal("star_rating"));
         hotel.setAmenities(resultSet.getString("amenities"));
         hotel.setStatus(resultSet.getString("status"));
@@ -197,11 +163,8 @@ public class HotelDAOImpl implements HotelDAO {
         statement.setString(2, hotel.getName());
         statement.setString(3, hotel.getDescription());
         statement.setString(4, hotel.getAddress());
-        statement.setString(5, hotel.getCity());
-        statement.setString(6, hotel.getState());
-        statement.setString(7, hotel.getCountry());
-        statement.setBigDecimal(8, hotel.getStarRating());
-        statement.setString(9, hotel.getAmenities());
-        statement.setString(10, hotel.getStatus());
+        statement.setBigDecimal(5, hotel.getStarRating());
+        statement.setString(6, hotel.getAmenities());
+        statement.setString(7, hotel.getStatus());
     }
 }

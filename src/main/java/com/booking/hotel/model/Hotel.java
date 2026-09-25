@@ -12,9 +12,6 @@ public class Hotel {
     private BigDecimal starRating;
     private String amenities;
     private String status;
-    private String city;
-    private String state;
-    private String country;
 
     public Hotel() {
     }
@@ -22,7 +19,7 @@ public class Hotel {
     public Hotel(long hotelId, Location location, String name,
                  String description, String address,
                  BigDecimal starRating, String amenities,
-                 String status, String city, String state, String country) {
+                 String status) {
         this.hotelId = hotelId;
         this.location = location;
         this.name = name;
@@ -31,9 +28,6 @@ public class Hotel {
         this.starRating = starRating;
         this.amenities = amenities;
         this.status = status;
-        this.city = city;
-        this.state = state;
-        this. country = country;
     }
 
     public long getHotelId() {
@@ -99,20 +93,5 @@ public class Hotel {
     public void setStatus(String status) {
         this.status = status;
     }
-
-    public String getCity(){ return city;}
-
-    public void setCity(String city){this.city = city;}
-
-    public String getState(){ return state;}
-
-    public void setState (String state){this.state = state;}
-
-    public String getCountry(){ return country;}
-
-    public void setCountry(String country){this.country = country;}
-
-
-
-
 }
+
