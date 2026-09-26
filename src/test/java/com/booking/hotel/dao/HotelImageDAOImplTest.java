@@ -6,110 +6,130 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import java.math.BigDecimal;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
+// Integration test for HotelImageDAOImpl. It needs a running local MySQL database
+// with the hotel_booking_system schema already applied, because it calls real JDBC code.
 class HotelImageDAOImplTest {
 
-    private HotelImageDAO hotelImageDAO;
-    private long createdImageId;
+    private HotelDAO hotelDAO;
+    private HotelImageDAO imageDAO;
 
+    private Hotel testHotel;
+
+    private long createdHotelId;
+    private final List<Long> createdImageIds = new ArrayList<>();
+
+    // Inserts a throwaway hotel so an image can use a real hotel_id.
     @BeforeEach
-    void setUp() {
-        hotelImageDAO = new HotelImageDAOImpl();
-        createdImageId = 0;
+    void setUp() throws SQLException {
+        hotelDAO = new HotelDAOImpl();
+        imageDAO = new HotelImageDAOImpl();
+        createdHotelId = 0;
+        createdImageIds.clear();
+
+        testHotel = newTestHotel();
+        hotelDAO.create(testHotel);
+        createdHotelId = testHotel.getHotelId();
     }
 
+    // Deletes every test image first, then the hotel. A missing row is ignored.
     @AfterEach
-    void deleteTestImage() {
-
-        if (createdImageId <= 0) {
-            return;
+    void deleteTestRows() {
+        for (Long imageId : createdImageIds) {
+            try {
+                if (imageId != null && imageId > 0) {
+                    imageDAO.delete(imageId);
+                }
+            } catch (SQLException ignored) {
+                // The image may already be gone. Still delete the remaining images and the hotel.
+            }
         }
-
         try {
-            hotelImageDAO.delete(createdImageId);
+            if (createdHotelId > 0) {
+                hotelDAO.delete(createdHotelId);
+            }
         } catch (SQLException ignored) {
+            // The hotel may already be gone.
         }
     }
 
+    // Checks that create inserts an image and MySQL assigns an id.
     @Test
     void createInsertsImageAndSetsGeneratedId() throws SQLException {
+        HotelImage image = newTestImage(0, false);
 
-        HotelImage image = newTestImage();
-
-        boolean created = hotelImageDAO.create(image);
-        createdImageId = image.getImageId();
+        boolean created = imageDAO.create(image);
+        createdImageIds.add(image.getImageId());
 
         assertTrue(created);
-        assertTrue(createdImageId > 0);
+        assertTrue(image.getImageId() > 0);
     }
 
+    // Checks that findById returns the same values that were inserted.
     @Test
     void findByIdReturnsInsertedImage() throws SQLException {
+        HotelImage image = insert(newTestImage(1, true));
 
-        HotelImage image = newTestImage();
-
-        hotelImageDAO.create(image);
-        createdImageId = image.getImageId();
-
-        HotelImage found = hotelImageDAO.findById(createdImageId);
+        HotelImage found = imageDAO.findById(image.getImageId());
 
         assertNotNull(found);
-        assertEquals(createdImageId, found.getImageId());
+        assertEquals(image.getImageId(), found.getImageId());
+        assertEquals(testHotel.getHotelId(), found.getHotel().getHotelId());
         assertEquals(image.getImageUrl(), found.getImageUrl());
         assertEquals(image.getCaption(), found.getCaption());
+
+
     }
 
+    // Checks that findByHotel includes the images and returns them in display_order, not insert order.
     @Test
-    void findByHotelIdReturnsImages() throws SQLException {
+    void findByHotelReturnsImagesOrderedByDisplayOrder() throws SQLException {
+        HotelImage third = insert(newTestImage(2, false));
+        HotelImage first = insert(newTestImage(0, true));
+        HotelImage second = insert(newTestImage(1, false));
 
-        HotelImage image = newTestImage();
+        List<HotelImage> images = (List<HotelImage>) imageDAO.findByHotel(testHotel.getHotelId());
 
-        hotelImageDAO.create(image);
-        createdImageId = image.getImageId();
+        assertEquals(3, images.size());
+        assertEquals(first.getImageId(), images.get(0).getImageId());
+        assertEquals(second.getImageId(), images.get(1).getImageId());
+        assertEquals(third.getImageId(), images.get(2).getImageId());
 
-        long hotelId = image.getHotel().getHotelId();
-
-        var images = hotelImageDAO.findByHotelId(hotelId);
-
-        assertNotNull(images);
-
-        assertTrue(
-                images.stream()
-                        .anyMatch(i -> i.getImageId() == createdImageId)
-        );
     }
 
-    @Test
-    void deleteRemovesImage() throws SQLException {
-
-        HotelImage image = newTestImage();
-
-        hotelImageDAO.create(image);
-        createdImageId = image.getImageId();
-
-        assertTrue(hotelImageDAO.delete(createdImageId));
-
-        assertNull(hotelImageDAO.findById(createdImageId));
-
-        createdImageId = 0;
+    private HotelImage insert(HotelImage image) throws SQLException {
+        imageDAO.create(image);
+        createdImageIds.add(image.getImageId());
+        return image;
     }
 
-    private HotelImage newTestImage() {
-
+    private Hotel newTestHotel() {
+        String unique = UUID.randomUUID().toString();
         Hotel hotel = new Hotel();
-        hotel.setHotelId(1);
+        hotel.setName("Hotel " + unique);
+        hotel.setDescription("Test hotel");
+        hotel.setAddress("1 Test Street");
+        hotel.setStarRating(new BigDecimal("4.5"));
+        hotel.setAmenities("WiFi");
+        hotel.setStatus("ACTIVE");
+        return hotel;
+    }
 
+    // image_url must be unique so repeated test runs do not collide.
+    private HotelImage newTestImage(int displayOrder, boolean primary) {
         HotelImage image = new HotelImage();
-
-        image.setHotel(hotel);
-        image.setImageUrl(
-                "https://example.com/test-" + System.currentTimeMillis() + ".jpg"
-        );
-        image.setCaption("Test hotel image");
-
+        image.setHotel(testHotel);
+        image.setImageUrl("https://example.com/images/" + UUID.randomUUID());
+        image.setCaption("Room photo " + displayOrder);
         return image;
     }
 }

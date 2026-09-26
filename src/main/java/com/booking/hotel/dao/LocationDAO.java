@@ -10,5 +10,7 @@ import java.util.List;
         List<Location> findAll() throws SQLException;
         boolean update(Location location) throws SQLException;
         boolean delete(long locationId) throws SQLException;
+
+        <__TMP__> __TMP__ resolveFullPath(long locationId);
     }
 

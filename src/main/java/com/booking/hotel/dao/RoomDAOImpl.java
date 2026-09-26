@@ -193,6 +193,16 @@ public class RoomDAOImpl implements RoomDAO {
         }
     }
 
+    @Override
+    public boolean updateStatus(long createdRoomId, String booked) {
+        return false;
+    }
+
+    @Override
+    public List<Room> findByHotel(long hotelId) {
+        return List.of();
+    }
+
     private Room mapRow(ResultSet rs) throws SQLException {
 
         Room room = new Room();

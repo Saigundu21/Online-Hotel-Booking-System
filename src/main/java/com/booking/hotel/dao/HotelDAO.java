@@ -11,7 +11,8 @@ public interface HotelDAO {
 
     Hotel findById(long hotelId) throws SQLException;
 
-    List<Hotel> findByCity(String city) throws SQLException;
+    // Optional: If you want to search by location_id instead of city name
+    // List<Hotel> findByLocationId(long locationId) throws SQLException;
 
     List<Hotel> findAll() throws SQLException;
 

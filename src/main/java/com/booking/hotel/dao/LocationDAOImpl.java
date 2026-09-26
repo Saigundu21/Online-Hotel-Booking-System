@@ -201,6 +201,11 @@ public class LocationDAOImpl implements LocationDAO {
         }
     }
 
+    @Override
+    public <__TMP__> __TMP__ resolveFullPath(long locationId) {
+        return null;
+    }
+
     private Location mapRow(ResultSet rs) throws SQLException {
 
         Location loc = new Location();

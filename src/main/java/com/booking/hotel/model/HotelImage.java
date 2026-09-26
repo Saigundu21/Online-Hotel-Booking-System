@@ -47,6 +47,6 @@ public class HotelImage {
     }
 
     public void setCaption(String caption) {
-        this.caption = caption;
-    }
-}
+        this.caption = caption;} }
+
+

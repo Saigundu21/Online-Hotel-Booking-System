@@ -7,23 +7,28 @@ import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
 import java.sql.SQLException;
+import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+// Integration tests for HotelDAOImpl. They need a running local MySQL database
+// with the hotel_booking_system schema already applied, because they call real JDBC code.
 class HotelDAOImplTest {
 
     private HotelDAO hotelDAO;
     private long createdHotelId;
 
+    // Builds a fresh DAO before each test. The id starts at 0 until a test inserts a row.
     @BeforeEach
     void setUp() {
         hotelDAO = new HotelDAOImpl();
         createdHotelId = 0;
     }
 
+    // Removes the row this test inserted. A missing row is ignored so cleanup does not hide a real failure.
     @AfterEach
     void deleteTestHotel() {
         if (createdHotelId <= 0) {
@@ -32,9 +37,11 @@ class HotelDAOImplTest {
         try {
             hotelDAO.delete(createdHotelId);
         } catch (SQLException ignored) {
+            // The row may already have been deleted by the test.
         }
     }
 
+    // Checks that create inserts a row and MySQL assigns an id.
     @Test
     void createInsertsHotelAndSetsGeneratedId() throws SQLException {
         Hotel hotel = newTestHotel();
@@ -46,6 +53,7 @@ class HotelDAOImplTest {
         assertTrue(createdHotelId > 0);
     }
 
+    // Checks that findById returns the same values that were inserted.
     @Test
     void findByIdReturnsInsertedHotel() throws SQLException {
         Hotel hotel = newTestHotel();
@@ -64,6 +72,26 @@ class HotelDAOImplTest {
         assertEquals(hotel.getStatus(), found.getStatus());
     }
 
+    // Checks that findByCity includes the hotel that was just inserted in that city.
+    @Test
+    void findByCityIncludesCreatedHotel() throws SQLException {
+        Hotel hotel = newTestHotel();
+        hotelDAO.create(hotel);
+        createdHotelId = hotel.getHotelId();
+
+        List<Hotel> hotels = hotelDAO.findAll();
+
+        boolean found = false;
+        for (Hotel candidate : hotels) {
+            if (candidate.getHotelId() == createdHotelId) {
+                found = true;
+                assertEquals(hotel.getName(), candidate.getName());
+            }
+        }
+        assertTrue(found);
+    }
+
+    // Builds a hotel whose name and city cannot collide with rows already in the table.
     private Hotel newTestHotel() {
         String unique = UUID.randomUUID().toString();
         Hotel hotel = new Hotel();
@@ -76,4 +104,3 @@ class HotelDAOImplTest {
         return hotel;
     }
 }
-

@@ -104,4 +104,7 @@ public class Booking {
     public void setBookingStatus(String bookingStatus) {
         this.bookingStatus = bookingStatus;
     }
-}
+
+    public void setPaymentOption(String card) {}public <__TMP__> __TMP__ getPaymentOption() {
+        return null;
+    }}

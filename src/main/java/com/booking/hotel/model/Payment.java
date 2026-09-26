@@ -72,5 +72,6 @@ public class Payment {
 
     public void setPaidAt(Timestamp paidAt) {
         this.paidAt = paidAt;
-    }
-}
+    }public <__TMP__> __TMP__ getPaymentMethod() {
+        return null;
+    } }

@@ -206,6 +206,11 @@ public class PaymentDAOImpl implements PaymentDAO {
         }
     }
 
+    @Override
+    public Payment findByBooking(long bookingId) {
+        return null;
+    }
+
     private Payment mapRow(ResultSet rs) throws SQLException {
 
         Payment p = new Payment();

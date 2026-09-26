@@ -155,6 +155,11 @@ public class ReviewDAOImpl implements ReviewDAO {
         }
     }
 
+    @Override
+    public List<Review> findByHotel(long hotelId) {
+        return List.of();
+    }
+
     private Review mapRow(ResultSet rs) throws SQLException {
 
         Review review = new Review();

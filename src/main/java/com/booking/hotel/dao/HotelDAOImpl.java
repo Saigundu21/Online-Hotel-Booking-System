@@ -12,13 +12,12 @@ import java.sql.Statement;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class HotelDAOImpl implements HotelDAO {
 
-    private static final Logger logger =
-            Logger.getLogger(HotelDAOImpl.class.getName());
+    // Records each hotel-table action. Messages are plain strings.
+    private static final Logger logger = Logger.getLogger(HotelDAOImpl.class.getName());
 
     private static final String SQL_INSERT_HOTEL =
             "INSERT INTO hotel (location_id, name, description, address, "
@@ -38,19 +37,15 @@ public class HotelDAOImpl implements HotelDAO {
     private static final String SQL_DELETE =
             "DELETE FROM hotel WHERE hotel_id = ?";
 
+    // Inserts one row into the hotel table and stores the new hotel_id on the Hotel object.
     @Override
     public boolean create(Hotel hotel) throws SQLException {
-
         try (Connection connection = JdbcUtil.getConnection();
-             PreparedStatement statement =
-                     connection.prepareStatement(
-                             SQL_INSERT_HOTEL,
-                             Statement.RETURN_GENERATED_KEYS)) {
+             PreparedStatement statement = connection.prepareStatement(SQL_INSERT_HOTEL, Statement.RETURN_GENERATED_KEYS)) {
 
             setHotelColumns(statement, hotel);
 
-            logger.info("Creating new hotel");
-
+            logger.fine("Inserting hotel with name " + hotel.getName());
             int rows = statement.executeUpdate();
 
             try (ResultSet keys = statement.getGeneratedKeys()) {
@@ -60,193 +55,94 @@ public class HotelDAOImpl implements HotelDAO {
             }
 
             if (rows > 0) {
-                logger.info("Hotel created successfully. Hotel ID: "
-                        + hotel.getHotelId());
+                logger.info("Inserted hotel id=" + hotel.getHotelId());
             }
-
             return rows > 0;
-
-        } catch (SQLException e) {
-
-            logger.log(
-                    Level.SEVERE,
-                    "Failed to create hotel",
-                    e
-            );
-
-            throw e;
         }
     }
 
+    // Selects the one hotel row whose hotel_id matches the given id.
     @Override
     public Hotel findById(long hotelId) throws SQLException {
-
         try (Connection connection = JdbcUtil.getConnection();
-             PreparedStatement statement =
-                     connection.prepareStatement(SQL_FIND_BY_ID)) {
+             PreparedStatement statement = connection.prepareStatement(SQL_FIND_BY_ID)) {
 
             statement.setLong(1, hotelId);
 
-            logger.info("Searching for hotel with ID: " + hotelId);
-
+            logger.fine("Selecting hotel with id " + hotelId);
             try (ResultSet resultSet = statement.executeQuery()) {
-
                 if (resultSet.next()) {
-
-                    logger.info("Hotel found with ID: " + hotelId);
-
                     return mapRow(resultSet);
                 }
-
-                logger.warning("No hotel found with ID: " + hotelId);
-
+                logger.warning("No hotel found for id " + hotelId);
                 return null;
             }
-
-        } catch (SQLException e) {
-
-            logger.log(
-                    Level.SEVERE,
-                    "Failed to find hotel with ID: " + hotelId,
-                    e
-            );
-
-            throw e;
         }
     }
 
-    @Override
-    public List<Hotel> findByCity(String city) throws SQLException {
-
-        // Existing implementation was a placeholder.
-        // Logging conversion does not change this method's functionality.
-        logger.info("Searching hotels by city: " + city);
-
-        return List.of();
-    }
-
+    // Selects every row from the hotel table.
     @Override
     public List<Hotel> findAll() throws SQLException {
-
         List<Hotel> hotels = new ArrayList<>();
 
         try (Connection connection = JdbcUtil.getConnection();
-             PreparedStatement statement =
-                     connection.prepareStatement(SQL_FIND_ALL)) {
+             PreparedStatement statement = connection.prepareStatement(SQL_FIND_ALL)) {
 
-            logger.info("Fetching all hotels");
-
+            logger.fine("Selecting all hotels");
             try (ResultSet resultSet = statement.executeQuery()) {
-
                 while (resultSet.next()) {
                     hotels.add(mapRow(resultSet));
                 }
             }
-
-            if (hotels.isEmpty()) {
-                logger.warning("No hotels found");
-            } else {
-                logger.info("Hotels retrieved successfully. Count: "
-                        + hotels.size());
-            }
-
-            return hotels;
-
-        } catch (SQLException e) {
-
-            logger.log(
-                    Level.SEVERE,
-                    "Failed to retrieve hotels",
-                    e
-            );
-
-            throw e;
         }
+
+        if (hotels.isEmpty()) {
+            logger.warning("No hotels found");
+        }
+        return hotels;
     }
 
+    // Updates location, name, description, address, star_rating, amenities, and status for this hotel_id.
     @Override
     public boolean update(Hotel hotel) throws SQLException {
-
         try (Connection connection = JdbcUtil.getConnection();
-             PreparedStatement statement =
-                     connection.prepareStatement(SQL_UPDATE)) {
+             PreparedStatement statement = connection.prepareStatement(SQL_UPDATE)) {
 
             setHotelColumns(statement, hotel);
-            statement.setLong(8, hotel.getHotelId());
+            statement.setLong(8, hotel.getHotelId()); // 8th parameter for WHERE hotel_id = ?
 
-            logger.info("Updating hotel with ID: "
-                    + hotel.getHotelId());
-
+            logger.fine("Updating hotel with id " + hotel.getHotelId());
             int rows = statement.executeUpdate();
-
             if (rows > 0) {
-                logger.info("Hotel updated successfully. Hotel ID: "
-                        + hotel.getHotelId());
-            } else {
-                logger.warning("No hotel was updated for ID: "
-                        + hotel.getHotelId());
+                logger.info("Updated hotel id=" + hotel.getHotelId());
             }
-
             return rows > 0;
-
-        } catch (SQLException e) {
-
-            logger.log(
-                    Level.SEVERE,
-                    "Failed to update hotel with ID: "
-                            + hotel.getHotelId(),
-                    e
-            );
-
-            throw e;
         }
     }
 
+    // Deletes the hotel row whose hotel_id matches the given id.
     @Override
     public boolean delete(long hotelId) throws SQLException {
-
         try (Connection connection = JdbcUtil.getConnection();
-             PreparedStatement statement =
-                     connection.prepareStatement(SQL_DELETE)) {
+             PreparedStatement statement = connection.prepareStatement(SQL_DELETE)) {
 
             statement.setLong(1, hotelId);
-
-            logger.info("Deleting hotel with ID: " + hotelId);
-
+            logger.fine("Deleting hotel with id " + hotelId);
             int rows = statement.executeUpdate();
-
             if (rows > 0) {
-                logger.info("Hotel deleted successfully. Hotel ID: "
-                        + hotelId);
-            } else {
-                logger.warning("No hotel was deleted for ID: "
-                        + hotelId);
+                logger.info("Deleted hotel id=" + hotelId);
             }
-
             return rows > 0;
-
-        } catch (SQLException e) {
-
-            logger.log(
-                    Level.SEVERE,
-                    "Failed to delete hotel with ID: " + hotelId,
-                    e
-            );
-
-            throw e;
         }
     }
 
+    // Copies one hotel-table row into a Hotel. location_id is stored on a Location object.
     private Hotel mapRow(ResultSet resultSet) throws SQLException {
-
         Hotel hotel = new Hotel();
-
         hotel.setHotelId(resultSet.getLong("hotel_id"));
 
         long locationId = resultSet.getLong("location_id");
-
         if (!resultSet.wasNull()) {
-
             Location location = new Location();
             location.setLocationId(locationId);
             hotel.setLocation(location);
@@ -258,26 +154,15 @@ public class HotelDAOImpl implements HotelDAO {
         hotel.setStarRating(resultSet.getBigDecimal("star_rating"));
         hotel.setAmenities(resultSet.getString("amenities"));
         hotel.setStatus(resultSet.getString("status"));
-
         return hotel;
     }
 
-    private void setHotelColumns(
-            PreparedStatement statement,
-            Hotel hotel) throws SQLException {
-
+    private void setHotelColumns(PreparedStatement statement, Hotel hotel) throws SQLException {
         if (hotel.getLocation() == null) {
-
             statement.setNull(1, Types.BIGINT);
-
         } else {
-
-            statement.setLong(
-                    1,
-                    hotel.getLocation().getLocationId()
-            );
+            statement.setLong(1, hotel.getLocation().getLocationId());
         }
-
         statement.setString(2, hotel.getName());
         statement.setString(3, hotel.getDescription());
         statement.setString(4, hotel.getAddress());

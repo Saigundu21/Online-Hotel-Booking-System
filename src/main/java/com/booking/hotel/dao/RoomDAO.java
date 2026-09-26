@@ -10,6 +10,7 @@ public interface RoomDAO {
     List<Room> findByHotelId(long hotelId) throws SQLException;
     boolean update(Room room) throws SQLException;
     boolean delete(long roomId) throws SQLException;
-}
+boolean updateStatus(long createdRoomId, String booked);
+List<Room> findByHotel(long hotelId);}
 
 

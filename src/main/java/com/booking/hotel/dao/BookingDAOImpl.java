@@ -211,6 +211,16 @@ public class BookingDAOImpl implements BookingDAO {
         }
     }
 
+    @Override
+    public <__TMP__> __TMP__ findByUser(long userId) {
+        return null;
+    }
+
+    @Override
+    public boolean updateStatus(long createdBookingId, String cancelled) {
+        return false;
+    }
+
     private Booking mapRow(ResultSet rs) throws SQLException {
 
         Booking b = new Booking();

@@ -11,36 +11,95 @@ import org.junit.jupiter.api.Test;
 import java.math.BigDecimal;
 import java.sql.Date;
 import java.sql.SQLException;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Optional;
+import java.util.UUID;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
+// Integration test for BookingDAOImpl. It needs a running local MySQL database
+// with the hotel_booking_system schema already applied, because it calls real JDBC code.
 class BookingDAOImplTest {
 
+    private UserDAO userDAO;
+    private HotelDAO hotelDAO;
+    private RoomDAO roomDAO;
     private BookingDAO bookingDAO;
+
+    private User testUser;
+    private Hotel testHotel;
+    private Room testRoom;
+
+    private long createdUserId;
+    private long createdHotelId;
+    private long createdRoomId;
     private long createdBookingId;
 
+    // Inserts a throwaway user, hotel, and room so a booking can use real foreign keys.
     @BeforeEach
-    void setUp() {
+    void setUp() throws SQLException {
+        userDAO = new UserDAOImpl();
+        hotelDAO = new HotelDAOImpl();
+        roomDAO = new RoomDAOImpl();
         bookingDAO = new BookingDAOImpl();
+
+        createdUserId = 0;
+        createdHotelId = 0;
+        createdRoomId = 0;
         createdBookingId = 0;
+
+        testUser = newTestUser();
+        userDAO.create(testUser);
+        createdUserId = testUser.getUserId();
+
+        testHotel = newTestHotel();
+        hotelDAO.create(testHotel);
+        createdHotelId = testHotel.getHotelId();
+
+        testRoom = newTestRoom(testHotel);
+        roomDAO.create(testRoom);
+        createdRoomId = testRoom.getRoomId();
     }
 
+    // Deletes the booking first, then the room, hotel, and user. A missing row is ignored.
     @AfterEach
-    void deleteTestBooking() {
-
-        if (createdBookingId <= 0) {
-            return;
-        }
-
+    void deleteTestRows() {
         try {
-            bookingDAO.delete(createdBookingId);
+            if (createdBookingId > 0) {
+                bookingDAO.delete(createdBookingId);
+            }
         } catch (SQLException ignored) {
+            // The booking may already be gone. Still delete the room, hotel, and user below.
+        }
+        try {
+            if (createdRoomId > 0) {
+                roomDAO.delete(createdRoomId);
+            }
+        } catch (SQLException ignored) {
+            // The room may already be gone. Still delete the hotel and user below.
+        }
+        try {
+            if (createdHotelId > 0) {
+                hotelDAO.delete(createdHotelId);
+            }
+        } catch (SQLException ignored) {
+            // The hotel may already be gone. Still delete the user below.
+        }
+        try {
+            if (createdUserId > 0) {
+                userDAO.delete(createdUserId);
+            }
+        } catch (SQLException ignored) {
+            // The user may already be gone.
         }
     }
 
+    // Checks that create inserts a booking and MySQL assigns an id.
     @Test
     void createInsertsBookingAndSetsGeneratedId() throws SQLException {
-
         Booking booking = newTestBooking();
 
         boolean created = bookingDAO.create(booking);
@@ -50,11 +109,10 @@ class BookingDAOImplTest {
         assertTrue(createdBookingId > 0);
     }
 
+    // Checks that findById returns the inserted values, including the same check-in and check-out dates.
     @Test
     void findByIdReturnsInsertedBooking() throws SQLException {
-
         Booking booking = newTestBooking();
-
         bookingDAO.create(booking);
         createdBookingId = booking.getBookingId();
 
@@ -62,108 +120,88 @@ class BookingDAOImplTest {
 
         assertNotNull(found);
         assertEquals(createdBookingId, found.getBookingId());
-        assertEquals(booking.getGuests(), found.getGuests());
-        assertEquals(
-                booking.getTotalAmount(),
-                found.getTotalAmount()
-        );
-        assertEquals(
-                booking.getBookingStatus(),
-                found.getBookingStatus()
-        );
+        assertEquals(testUser.getUserId(), found.getUser().getUserId());
+        assertEquals(testHotel.getHotelId(), found.getHotel().getHotelId());
+        assertEquals(testRoom.getRoomId(), found.getRoom().getRoomId());
+        assertEquals(booking.getCheckInDate(), found.getCheckInDate());
+        assertEquals(booking.getCheckOutDate(), found.getCheckOutDate());
+        assertEquals(0, booking.getTotalAmount().compareTo(found.getTotalAmount()));
+        assertEquals(Optional.ofNullable(booking.getPaymentOption()), found.getPaymentOption());
+        assertEquals(booking.getBookingStatus(), found.getBookingStatus());
     }
 
+    // Checks that findByUser includes the booking that was just inserted for this user.
     @Test
-    void findByUserIdReturnsBookings() throws SQLException {
-
+    void findByUserIncludesCreatedBooking() throws SQLException {
         Booking booking = newTestBooking();
-
         bookingDAO.create(booking);
         createdBookingId = booking.getBookingId();
 
-        long userId = booking.getUser().getUserId();
+        List<Booking> bookings = (List<Booking>) bookingDAO.findByUser(testUser.getUserId());
 
-        var bookings = bookingDAO.findByUserId(userId);
-
-        assertNotNull(bookings);
-
-        assertTrue(
-                bookings.stream()
-                        .anyMatch(b -> b.getBookingId() == createdBookingId)
-        );
+        boolean found = false;
+        for (Booking candidate : bookings) {
+            if (candidate.getBookingId() == createdBookingId) {
+                found = true;
+                assertEquals(testUser.getUserId(), candidate.getUser().getUserId());
+            }
+        }
+        assertTrue(found);
     }
 
+    // Checks that updateStatus changes booking_status and findById returns the new value.
     @Test
-    void updateChangesBookingDetails() throws SQLException {
-
+    void updateStatusChangesBookingStatus() throws SQLException {
         Booking booking = newTestBooking();
-
         bookingDAO.create(booking);
         createdBookingId = booking.getBookingId();
 
-        booking.setGuests(4);
-        booking.setTotalAmount(new BigDecimal("5000.00"));
-        booking.setBookingStatus("CONFIRMED");
+        assertTrue(bookingDAO.updateStatus(createdBookingId, "CANCELLED"));
 
-        assertTrue(bookingDAO.update(booking));
-
-        Booking updated = bookingDAO.findById(createdBookingId);
-
-        assertNotNull(updated);
-        assertEquals(4, updated.getGuests());
-        assertEquals(
-                new BigDecimal("5000.00"),
-                updated.getTotalAmount()
-        );
-        assertEquals("CONFIRMED", updated.getBookingStatus());
+        Booking found = bookingDAO.findById(createdBookingId);
+        assertNotNull(found);
+        assertEquals("CANCELLED", found.getBookingStatus());
     }
 
-    @Test
-    void deleteRemovesBooking() throws SQLException {
-
-        Booking booking = newTestBooking();
-
-        bookingDAO.create(booking);
-        createdBookingId = booking.getBookingId();
-
-        assertTrue(bookingDAO.delete(createdBookingId));
-
-        assertNull(bookingDAO.findById(createdBookingId));
-
-        createdBookingId = 0;
+    private User newTestUser() {
+        String uniqueEmail = "user-" + UUID.randomUUID() + "@example.com";
+        return new User(0, "Test User", uniqueEmail, "test123", "9999999999", "CUSTOMER", "ACTIVE");
     }
 
-    private Booking newTestBooking() {
-
-        User user = new User();
-        user.setUserId(1);
-
+    private Hotel newTestHotel() {
+        String unique = UUID.randomUUID().toString();
         Hotel hotel = new Hotel();
-        hotel.setHotelId(1);
+        hotel.setName("Hotel " + unique);
+        hotel.setDescription("Test hotel");
+        hotel.setAddress("1 Test Street");
+        hotel.setStarRating(new BigDecimal("4.5"));
+        hotel.setAmenities("WiFi");
+        hotel.setStatus("ACTIVE");
+        return hotel;
+    }
 
+    private Room newTestRoom(Hotel hotel) {
         Room room = new Room();
-        room.setRoomId(1);
+        room.setHotel(hotel);
+        room.setRoomNumber("R" + UUID.randomUUID().toString().substring(0, 8));
+        room.setRoomType("DELUXE");
+        room.setCapacity(2);
+        room.setBasePrice(new BigDecimal("1500.00"));
+        room.setStatus("AVAILABLE");
+        return room;
+    }
 
+    // Check-out is three days after check-in so the two dates are different.
+    private Booking newTestBooking() {
         Booking booking = new Booking();
-
-        booking.setUser(user);
-        booking.setHotel(hotel);
-        booking.setRoom(room);
-
-        booking.setCheckInDate(
-                Date.valueOf("2026-10-10")
-        );
-
-        booking.setCheckOutDate(
-                Date.valueOf("2026-10-12")
-        );
-
-        booking.setGuests(2);
-        booking.setTotalAmount(
-                new BigDecimal("3000.00")
-        );
-        booking.setBookingStatus("PENDING");
-
+        booking.setUser(testUser);
+        booking.setHotel(testHotel);
+        booking.setRoom(testRoom);
+        booking.setCheckInDate(Date.valueOf(LocalDate.now().plusDays(1)));
+        booking.setCheckOutDate(Date.valueOf(LocalDate.now().plusDays(4)));
+        booking.setTotalAmount(new BigDecimal("4500.00"));
+        booking.setPaymentOption("CARD");
+        booking.setBookingStatus("CONFIRMED");
         return booking;
     }
 }

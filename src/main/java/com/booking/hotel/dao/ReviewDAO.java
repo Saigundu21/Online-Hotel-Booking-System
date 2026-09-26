@@ -9,5 +9,6 @@ public interface ReviewDAO {
     Review findById(long reviewId) throws SQLException;
     List<Review> findByHotelId(long hotelId) throws SQLException;
     boolean delete(long reviewId) throws SQLException;
-}
+List<Review> findByHotel(long hotelId);}
+
 

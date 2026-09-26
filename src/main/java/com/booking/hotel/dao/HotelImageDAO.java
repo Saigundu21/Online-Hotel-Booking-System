@@ -9,4 +9,6 @@ public interface HotelImageDAO {
     HotelImage findById(long imageId) throws SQLException;
     List<HotelImage> findByHotelId(long hotelId) throws SQLException;
     boolean delete(long imageId) throws SQLException;
+
+    <__TMP__> __TMP__ findByHotel(long hotelId);
 }

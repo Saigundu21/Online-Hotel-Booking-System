@@ -10,4 +10,7 @@ public interface PaymentDAO {
     List<Payment> findByBookingId(long bookingId) throws SQLException;
     boolean update(Payment payment) throws SQLException;
     boolean delete(long paymentId) throws SQLException;
+
+    Payment findByBooking(long bookingId);
+
 }

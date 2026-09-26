@@ -164,6 +164,11 @@ public class HotelImageDAOImpl implements HotelImageDAO {
         }
     }
 
+    @Override
+    public <__TMP__> __TMP__ findByHotel(long hotelId) {
+        return null;
+    }
+
     private HotelImage mapRow(ResultSet rs) throws SQLException {
 
         HotelImage img = new HotelImage();

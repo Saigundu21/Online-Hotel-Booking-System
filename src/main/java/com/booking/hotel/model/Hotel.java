@@ -13,13 +13,14 @@ public class Hotel {
     private String amenities;
     private String status;
 
+
     public Hotel() {
     }
 
     public Hotel(long hotelId, Location location, String name,
                  String description, String address,
                  BigDecimal starRating, String amenities,
-                 String status) {
+                 String status ) {
         this.hotelId = hotelId;
         this.location = location;
         this.name = name;
@@ -93,6 +94,7 @@ public class Hotel {
     public void setStatus(String status) {
         this.status = status;
     }
+
 }
 
 
