@@ -11,6 +11,6 @@ public interface PaymentDAO {
     boolean update(Payment payment) throws SQLException;
     boolean delete(long paymentId) throws SQLException;
 
-    Payment findByBooking(long bookingId);
+    Payment findByBooking(long bookingId) throws SQLException;
 
 }

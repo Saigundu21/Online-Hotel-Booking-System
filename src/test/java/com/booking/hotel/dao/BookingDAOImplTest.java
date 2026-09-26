@@ -126,7 +126,10 @@ class BookingDAOImplTest {
         assertEquals(booking.getCheckInDate(), found.getCheckInDate());
         assertEquals(booking.getCheckOutDate(), found.getCheckOutDate());
         assertEquals(0, booking.getTotalAmount().compareTo(found.getTotalAmount()));
-        assertEquals(Optional.ofNullable(booking.getPaymentOption()), found.getPaymentOption());
+        assertEquals(
+                booking.getPaymentOption() != null ? booking.getPaymentOption().toString() : null,
+                found.getPaymentOption() != null ? found.getPaymentOption().toString() : null
+        );
         assertEquals(booking.getBookingStatus(), found.getBookingStatus());
     }
 
@@ -199,6 +202,7 @@ class BookingDAOImplTest {
         booking.setRoom(testRoom);
         booking.setCheckInDate(Date.valueOf(LocalDate.now().plusDays(1)));
         booking.setCheckOutDate(Date.valueOf(LocalDate.now().plusDays(4)));
+        booking.setGuests(2); // Added to satisfy the database check constraint for guests count
         booking.setTotalAmount(new BigDecimal("4500.00"));
         booking.setPaymentOption("CARD");
         booking.setBookingStatus("CONFIRMED");

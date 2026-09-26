@@ -16,15 +16,18 @@ public class HotelImageDAOImpl implements HotelImageDAO {
             Logger.getLogger(HotelImageDAOImpl.class.getName());
 
     private static final String INSERT_SQL =
-            "INSERT INTO hotel_image (hotel_id, image_url, caption) " +
-                    "VALUES (?, ?, ?)";
+            "INSERT INTO hotel_image (hotel_id, image_url, caption, display_order) " +
+                    "VALUES (?, ?, ?, ?)";
+    private static final String SELECT_BY_HOTEL_ORDERED_SQL =
+            "SELECT image_id, hotel_id, image_url, caption, display_order " +
+                    "FROM hotel_image WHERE hotel_id = ? ORDER BY display_order";
 
     private static final String SELECT_BY_ID_SQL =
-            "SELECT image_id, hotel_id, image_url, caption " +
+            "SELECT image_id, hotel_id, image_url, caption,display_order " +
                     "FROM hotel_image WHERE image_id = ?";
 
     private static final String SELECT_BY_HOTEL_SQL =
-            "SELECT image_id, hotel_id, image_url, caption " +
+            "SELECT image_id, hotel_id, image_url, caption, display_order " +
                     "FROM hotel_image WHERE hotel_id = ?";
 
     private static final String DELETE_SQL =
@@ -40,6 +43,7 @@ public class HotelImageDAOImpl implements HotelImageDAO {
             stmt.setLong(1, image.getHotel().getHotelId());
             stmt.setString(2, image.getImageUrl());
             stmt.setString(3, image.getCaption());
+            stmt.setInt(4, image.getDisplayOrder());
 
             logger.fine("Creating image for hotel id="
                     + image.getHotel().getHotelId());
@@ -100,7 +104,6 @@ public class HotelImageDAOImpl implements HotelImageDAO {
     @Override
     public List<HotelImage> findByHotelId(long hotelId)
             throws SQLException {
-
         List<HotelImage> list = new ArrayList<>();
 
         try (Connection conn = JdbcUtil.getConnection();
@@ -165,10 +168,38 @@ public class HotelImageDAOImpl implements HotelImageDAO {
     }
 
     @Override
-    public <__TMP__> __TMP__ findByHotel(long hotelId) {
-        return null;
-    }
+    public List<HotelImage> findByHotel(long hotelId) throws SQLException {
+        List<HotelImage> list = new ArrayList<>();
 
+        try (Connection conn = JdbcUtil.getConnection();
+             PreparedStatement stmt =
+                     conn.prepareStatement(SELECT_BY_HOTEL_ORDERED_SQL)) {
+
+            stmt.setLong(1, hotelId);
+
+            logger.fine("Finding ordered images for hotel id=" + hotelId);
+
+            try (ResultSet rs = stmt.executeQuery()) {
+
+                while (rs.next()) {
+                    list.add(mapRow(rs));
+                }
+            }
+
+            if (list.isEmpty()) {
+                logger.warning(
+                        "No images found for hotel id=" + hotelId);
+            }
+
+            return list;
+
+        } catch (SQLException e) {
+            logger.log(Level.SEVERE,
+                    "Failed to find ordered images for hotel id="
+                            + hotelId, e);
+            throw e;
+        }
+    }
     private HotelImage mapRow(ResultSet rs) throws SQLException {
 
         HotelImage img = new HotelImage();
@@ -181,6 +212,7 @@ public class HotelImageDAOImpl implements HotelImageDAO {
 
         img.setImageUrl(rs.getString("image_url"));
         img.setCaption(rs.getString("caption"));
+        img.setDisplayOrder(rs.getInt("display_order"));
 
         return img;
     }

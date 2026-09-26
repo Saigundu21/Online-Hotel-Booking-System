@@ -11,6 +11,6 @@ import java.util.List;
         boolean update(Location location) throws SQLException;
         boolean delete(long locationId) throws SQLException;
 
-        <__TMP__> __TMP__ resolveFullPath(long locationId);
+        String resolveFullPath(long locationId) throws SQLException;
     }
 

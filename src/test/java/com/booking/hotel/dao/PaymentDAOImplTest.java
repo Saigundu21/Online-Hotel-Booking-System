@@ -205,6 +205,7 @@ class PaymentDAOImplTest {
         Payment payment = new Payment();
         payment.setBooking(testBooking);
         payment.setAmount(new BigDecimal("4500.00"));
+        payment.setPaymentMethod("CREDIT_CARD");
         payment.setPaymentStatus("PAID");
         payment.setTransactionRef("txn-" + UUID.randomUUID());
         payment.setPaidAt(Timestamp.valueOf(LocalDateTime.now().withNano(0)));

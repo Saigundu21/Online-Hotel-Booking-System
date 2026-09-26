@@ -8,7 +8,6 @@ public interface HotelImageDAO {
     boolean create(HotelImage image) throws SQLException;
     HotelImage findById(long imageId) throws SQLException;
     List<HotelImage> findByHotelId(long hotelId) throws SQLException;
+    List<HotelImage> findByHotel(long hotelId) throws SQLException;
     boolean delete(long imageId) throws SQLException;
-
-    <__TMP__> __TMP__ findByHotel(long hotelId);
 }

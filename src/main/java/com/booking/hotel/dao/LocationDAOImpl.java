@@ -188,23 +188,39 @@ public class LocationDAOImpl implements LocationDAO {
                 logger.info("Deleted location id=" + locationId);
             } else {
                 logger.warning(
-                        "No location found to delete for id="
-                                + locationId);
+                        "No location found to delete for id=" +locationId);
             }
 
             return rows > 0;
 
         } catch (SQLException e) {
             logger.log(Level.SEVERE,
-                    "Failed to delete location id=" + locationId, e);
+                    "Failed to delete location id=" +locationId, e);
             throw e;
         }
     }
 
     @Override
-    public <__TMP__> __TMP__ resolveFullPath(long locationId) {
-        return null;
+    public String resolveFullPath(long locationId) throws SQLException {
+        StringBuilder path = new StringBuilder();
+        Location current = findById(locationId);
+
+        while (current != null) {
+            if (path.length() > 0) {
+                path.append(", ");
+            }
+            path.append(current.getName());
+
+            if (current.getParent() != null) {
+                current = findById(current.getParent().getLocationId());
+            } else {
+                current = null;
+            }
+        }
+
+        return path.toString();
     }
+
 
     private Location mapRow(ResultSet rs) throws SQLException {
 

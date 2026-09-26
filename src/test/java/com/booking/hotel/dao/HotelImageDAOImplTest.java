@@ -105,6 +105,13 @@ class HotelImageDAOImplTest {
         assertEquals(third.getImageId(), images.get(2).getImageId());
 
     }
+    @AfterEach
+    void tearDown() throws SQLException {
+        List<HotelImage> images = imageDAO.findByHotel(testHotel.getHotelId());
+        for (HotelImage img : images) {
+            imageDAO.delete(img.getImageId());
+        }
+    }
 
     private HotelImage insert(HotelImage image) throws SQLException {
         imageDAO.create(image);
@@ -130,6 +137,7 @@ class HotelImageDAOImplTest {
         image.setHotel(testHotel);
         image.setImageUrl("https://example.com/images/" + UUID.randomUUID());
         image.setCaption("Room photo " + displayOrder);
+        image.setDisplayOrder(displayOrder);
         return image;
     }
 }

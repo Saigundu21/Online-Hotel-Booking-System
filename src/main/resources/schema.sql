@@ -55,8 +55,7 @@ CREATE TABLE booking (
                          room_id BIGINT NOT NULL,
                          check_in_date DATE NOT NULL,
                          check_out_date DATE NOT NULL,
-                         guests_adults INT NOT NULL,
-                         guests_children INT DEFAULT 0,
+                         guests INT NOT NULL,
                          total_amount DECIMAL(12, 2) NOT NULL,
                          payment_option VARCHAR(20) NOT NULL,
                          booking_status VARCHAR(20) NOT NULL,
@@ -101,5 +100,6 @@ CREATE TABLE hotel_image (
                              is_primary BOOLEAN DEFAULT FALSE,
                              display_order INT DEFAULT 0,
                              CONSTRAINT fk_hotel_image_hotel
-                                 FOREIGN KEY (hotel_id) REFERENCES hotel (hotel_id)
+
+                            FOREIGN KEY (hotel_id) REFERENCES hotel (hotel_id)
 );

@@ -157,7 +157,13 @@ public class ReviewDAOImpl implements ReviewDAO {
 
     @Override
     public List<Review> findByHotel(long hotelId) {
-        return List.of();
+        try {
+            return findByHotelId(hotelId);
+        } catch (SQLException e) {
+            logger.log(Level.SEVERE, "Failed to find reviews for hotel id=" + hotelId, e);
+            return new ArrayList<>();
+        }
+
     }
 
     private Review mapRow(ResultSet rs) throws SQLException {
@@ -180,4 +186,5 @@ public class ReviewDAOImpl implements ReviewDAO {
         return review;
     }
 }
+
 

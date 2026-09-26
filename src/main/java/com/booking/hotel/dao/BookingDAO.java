@@ -11,9 +11,9 @@ public interface BookingDAO {
     boolean update(Booking booking) throws SQLException;
     boolean delete(long bookingId) throws SQLException;
 
-    <__TMP__> __TMP__ findByUser(long userId);
+    List<Booking> findByUser(long userId);
 
-    boolean updateStatus(long createdBookingId, String cancelled);
+    boolean updateStatus(long BookingId, String status);
 
 }
 

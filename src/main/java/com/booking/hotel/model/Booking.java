@@ -13,6 +13,7 @@ public class Booking {
     private Date checkOutDate;
     private int guests;
     private BigDecimal totalAmount;
+    private String paymentOption;
     private String bookingStatus;
 
     public Booking() {
@@ -20,7 +21,7 @@ public class Booking {
 
     public Booking(long bookingId, User user, Hotel hotel, Room room,
                    Date checkInDate, Date checkOutDate,
-                   int guests, BigDecimal totalAmount,
+                   int guests, BigDecimal totalAmount,String paymentOption,
                    String bookingStatus) {
         this.bookingId = bookingId;
         this.user = user;
@@ -30,6 +31,7 @@ public class Booking {
         this.checkOutDate = checkOutDate;
         this.guests = guests;
         this.totalAmount = totalAmount;
+        this.paymentOption = paymentOption;
         this.bookingStatus = bookingStatus;
     }
 
@@ -97,6 +99,14 @@ public class Booking {
         this.totalAmount = totalAmount;
     }
 
+    public String getPaymentOption() {
+        return paymentOption;
+    }
+
+    public void setPaymentOption(String paymentOption) {
+        this.paymentOption = paymentOption;
+    }
+
     public String getBookingStatus() {
         return bookingStatus;
     }
@@ -105,6 +115,4 @@ public class Booking {
         this.bookingStatus = bookingStatus;
     }
 
-    public void setPaymentOption(String card) {}public <__TMP__> __TMP__ getPaymentOption() {
-        return null;
-    }}
+   }

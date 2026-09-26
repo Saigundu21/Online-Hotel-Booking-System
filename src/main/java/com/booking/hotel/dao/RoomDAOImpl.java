@@ -194,13 +194,34 @@ public class RoomDAOImpl implements RoomDAO {
     }
 
     @Override
-    public boolean updateStatus(long createdRoomId, String booked) {
-        return false;
+    public boolean updateStatus(long roomId, String status) {
+        String sql = "UPDATE room SET status = ? WHERE room_id = ?";
+
+        try (Connection conn = JdbcUtil.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setString(1, status);
+            stmt.setLong(2, roomId);
+
+            int rows = stmt.executeUpdate();
+            return rows > 0;
+
+        } catch (SQLException e) {
+            logger.log(Level.SEVERE, "Failed to update room status for id=" + roomId, e);
+            return false;
+        }
+
     }
 
     @Override
     public List<Room> findByHotel(long hotelId) {
-        return List.of();
+
+        try {
+            return findByHotelId(hotelId);
+        } catch (SQLException e) {
+            logger.log(Level.SEVERE, "Failed to find rooms for hotel id=" + hotelId, e);
+            return new ArrayList<>();
+        }
     }
 
     private Room mapRow(ResultSet rs) throws SQLException {
@@ -222,3 +243,4 @@ public class RoomDAOImpl implements RoomDAO {
         return room;
     }
 }
+

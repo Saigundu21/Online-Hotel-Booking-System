@@ -8,6 +8,7 @@ public class Payment {
     private long paymentId;
     private Booking booking;  // using FK
     private BigDecimal amount;
+    private String paymentMethod;
     private String paymentStatus;
     private String transactionRef;
     private Timestamp paidAt;
@@ -15,12 +16,13 @@ public class Payment {
     public Payment() {
     }
 
-    public Payment(long paymentId, Booking booking, BigDecimal amount,
+    public Payment(long paymentId, Booking booking, BigDecimal amount,String paymentMethod,
                    String paymentStatus, String transactionRef,
                    Timestamp paidAt) {
         this.paymentId = paymentId;
         this.booking = booking;
         this.amount = amount;
+        this.paymentMethod = paymentMethod;
         this.paymentStatus = paymentStatus;
         this.transactionRef = transactionRef;
         this.paidAt = paidAt;
@@ -50,6 +52,14 @@ public class Payment {
         this.amount = amount;
     }
 
+    public String getPaymentMethod() {
+        return paymentMethod;
+    }
+
+    public void setPaymentMethod(String paymentMethod) {
+        this.paymentMethod = paymentMethod;
+    }
+
     public String getPaymentStatus() {
         return paymentStatus;
     }
@@ -72,6 +82,4 @@ public class Payment {
 
     public void setPaidAt(Timestamp paidAt) {
         this.paidAt = paidAt;
-    }public <__TMP__> __TMP__ getPaymentMethod() {
-        return null;
     } }

@@ -16,23 +16,23 @@ public class BookingDAOImpl implements BookingDAO {
 
     private static final String INSERT_SQL =
             "INSERT INTO booking (user_id, hotel_id, room_id, check_in_date, " +
-                    "check_out_date, guests, total_amount, booking_status) " +
-                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+                    "check_out_date, guests, total_amount, payment_option, booking_status) " +
+                    "VALUES (?, ?, ?, ?, ?, ?, ?, ?,?)";
 
     private static final String SELECT_BY_ID_SQL =
             "SELECT booking_id, user_id, hotel_id, room_id, check_in_date, " +
-                    "check_out_date, guests, total_amount, booking_status " +
+                    "check_out_date, guests, total_amount, payment_option, booking_status " +
                     "FROM booking WHERE booking_id = ?";
 
     private static final String SELECT_BY_USER_SQL =
             "SELECT booking_id, user_id, hotel_id, room_id, check_in_date, " +
-                    "check_out_date, guests, total_amount, booking_status " +
+                    "check_out_date, guests, total_amount, payment_option, booking_status " +
                     "FROM booking WHERE user_id = ?";
 
     private static final String UPDATE_SQL =
             "UPDATE booking SET user_id = ?, hotel_id = ?, room_id = ?, " +
                     "check_in_date = ?, check_out_date = ?, guests = ?, " +
-                    "total_amount = ?, booking_status = ? WHERE booking_id = ?";
+                    "total_amount = ?, booking_status = ?, payment_option = ? WHERE booking_id = ?";
 
     private static final String DELETE_SQL =
             "DELETE FROM booking WHERE booking_id = ?";
@@ -51,7 +51,8 @@ public class BookingDAOImpl implements BookingDAO {
             stmt.setDate(5, booking.getCheckOutDate());
             stmt.setInt(6, booking.getGuests());
             stmt.setBigDecimal(7, booking.getTotalAmount());
-            stmt.setString(8, booking.getBookingStatus());
+            stmt.setString(8, booking.getPaymentOption());
+            stmt.setString(9, booking.getBookingStatus());
 
             logger.fine("Creating booking for user id="
                     + booking.getUser().getUserId());
@@ -155,8 +156,9 @@ public class BookingDAOImpl implements BookingDAO {
             stmt.setDate(5, booking.getCheckOutDate());
             stmt.setInt(6, booking.getGuests());
             stmt.setBigDecimal(7, booking.getTotalAmount());
-            stmt.setString(8, booking.getBookingStatus());
-            stmt.setLong(9, booking.getBookingId());
+            stmt.setString(8, booking.getPaymentOption());
+            stmt.setString(9, booking.getBookingStatus());
+            stmt.setLong(10, booking.getBookingId());
 
             logger.fine("Updating booking id="
                     + booking.getBookingId());
@@ -212,13 +214,32 @@ public class BookingDAOImpl implements BookingDAO {
     }
 
     @Override
-    public <__TMP__> __TMP__ findByUser(long userId) {
-        return null;
+    public List<Booking> findByUser(long userId) {
+        try {
+            return findByUserId(userId);
+        } catch (SQLException e) {
+            logger.log(Level.SEVERE, "Failed to find bookings for user id=" + userId, e);
+            return new ArrayList<>();
+        }
     }
 
     @Override
-    public boolean updateStatus(long createdBookingId, String cancelled) {
-        return false;
+    public boolean updateStatus(long bookingId, String status) {
+        String sql = "UPDATE booking SET booking_status = ? WHERE booking_id = ?";
+
+        try (Connection conn = JdbcUtil.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(sql)) {
+
+            stmt.setString(1, status);
+            stmt.setLong(2, bookingId);
+
+            int rows = stmt.executeUpdate();
+            return rows > 0;
+
+        } catch (SQLException e) {
+            logger.log(Level.SEVERE, "Failed to update booking status for id=" + bookingId, e);
+            return false;
+        }
     }
 
     private Booking mapRow(ResultSet rs) throws SQLException {
@@ -243,6 +264,7 @@ public class BookingDAOImpl implements BookingDAO {
         b.setCheckOutDate(rs.getDate("check_out_date"));
         b.setGuests(rs.getInt("guests"));
         b.setTotalAmount(rs.getBigDecimal("total_amount"));
+        b.setPaymentOption(rs.getString("payment_option"));
         b.setBookingStatus(rs.getString("booking_status"));
 
         return b;

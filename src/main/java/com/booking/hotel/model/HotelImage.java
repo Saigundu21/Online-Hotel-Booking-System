@@ -6,16 +6,19 @@ public class HotelImage {
     private Hotel hotel; //using FK
     private String imageUrl;
     private String caption;
+    private int displayOrder;
 
     public HotelImage() {
     }
 
     public HotelImage(long imageId, Hotel hotel,
-                      String imageUrl, String caption) {
+                      String imageUrl, String caption,int displayOrder) {
         this.imageId = imageId;
         this.hotel = hotel;
         this.imageUrl = imageUrl;
         this.caption = caption;
+        this.displayOrder = displayOrder;
+
     }
 
     public long getImageId() {
@@ -47,6 +50,14 @@ public class HotelImage {
     }
 
     public void setCaption(String caption) {
-        this.caption = caption;} }
+        this.caption = caption;}
+    // <-- 3. Add these getter and setter methods
+    public int getDisplayOrder() {
+        return displayOrder;
+    }
+
+    public void setDisplayOrder(int displayOrder) {
+        this.displayOrder = displayOrder;
+    } }
 
 

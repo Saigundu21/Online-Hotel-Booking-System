@@ -16,19 +16,19 @@ public class PaymentDAOImpl implements PaymentDAO {
             Logger.getLogger(PaymentDAOImpl.class.getName());
 
     private static final String INSERT_SQL =
-            "INSERT INTO payment (booking_id, amount, payment_status, " +
-                    "transaction_ref, paid_at) VALUES (?, ?, ?, ?, ?)";
+            "INSERT INTO payment (booking_id, amount,payment_method, payment_status, " +
+                    "transaction_ref, paid_at) VALUES (?, ?, ?, ?, ?, ?)";
 
     private static final String SELECT_BY_ID_SQL =
-            "SELECT payment_id, booking_id, amount, payment_status, " +
+            "SELECT payment_id, booking_id, amount,payment_method, payment_status, " +
                     "transaction_ref, paid_at FROM payment WHERE payment_id = ?";
 
     private static final String SELECT_BY_BOOKING_SQL =
-            "SELECT payment_id, booking_id, amount, payment_status, " +
+            "SELECT payment_id, booking_id, amount,payment_method, payment_status, " +
                     "transaction_ref, paid_at FROM payment WHERE booking_id = ?";
 
     private static final String UPDATE_SQL =
-            "UPDATE payment SET booking_id = ?, amount = ?, " +
+            "UPDATE payment SET booking_id = ?, amount = ?,payment_method = ?, " +
                     "payment_status = ?, transaction_ref = ?, paid_at = ? " +
                     "WHERE payment_id = ?";
 
@@ -44,9 +44,10 @@ public class PaymentDAOImpl implements PaymentDAO {
 
             stmt.setLong(1, payment.getBooking().getBookingId());
             stmt.setBigDecimal(2, payment.getAmount());
-            stmt.setString(3, payment.getPaymentStatus());
-            stmt.setString(4, payment.getTransactionRef());
-            stmt.setTimestamp(5, payment.getPaidAt());
+            stmt.setString(3, payment.getPaymentMethod());
+            stmt.setString(4, payment.getPaymentStatus());
+            stmt.setString(5, payment.getTransactionRef());
+            stmt.setTimestamp(6, payment.getPaidAt());
 
             logger.fine("Creating payment for booking id="
                     + payment.getBooking().getBookingId());
@@ -148,10 +149,11 @@ public class PaymentDAOImpl implements PaymentDAO {
 
             stmt.setLong(1, payment.getBooking().getBookingId());
             stmt.setBigDecimal(2, payment.getAmount());
-            stmt.setString(3, payment.getPaymentStatus());
-            stmt.setString(4, payment.getTransactionRef());
-            stmt.setTimestamp(5, payment.getPaidAt());
-            stmt.setLong(6, payment.getPaymentId());
+            stmt.setString(3, payment.getPaymentMethod());
+            stmt.setString(4, payment.getPaymentStatus());
+            stmt.setString(5, payment.getTransactionRef());
+            stmt.setTimestamp(6, payment.getPaidAt());
+            stmt.setLong(7, payment.getPaymentId());
 
             logger.fine("Updating payment id="
                     + payment.getPaymentId());
@@ -207,8 +209,9 @@ public class PaymentDAOImpl implements PaymentDAO {
     }
 
     @Override
-    public Payment findByBooking(long bookingId) {
-        return null;
+    public Payment findByBooking(long bookingId) throws SQLException  {
+        List<Payment> payments = findByBookingId(bookingId);
+        return payments.isEmpty() ? null : payments.get(0);
     }
 
     private Payment mapRow(ResultSet rs) throws SQLException {
@@ -222,6 +225,7 @@ public class PaymentDAOImpl implements PaymentDAO {
         p.setBooking(b);
 
         p.setAmount(rs.getBigDecimal("amount"));
+        p.setPaymentMethod(rs.getString("payment_method"));
         p.setPaymentStatus(rs.getString("payment_status"));
         p.setTransactionRef(rs.getString("transaction_ref"));
         p.setPaidAt(rs.getTimestamp("paid_at"));
