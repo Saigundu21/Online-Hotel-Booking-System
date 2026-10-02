@@ -2,6 +2,7 @@ package com.booking.hotel.dao;
 
 import com.booking.hotel.model.Room;
 import java.sql.SQLException;
+import java.time.LocalDate;
 import java.util.List;
 
 public interface RoomDAO {
@@ -11,6 +12,7 @@ public interface RoomDAO {
     boolean update(Room room) throws SQLException;
     boolean delete(long roomId) throws SQLException;
 boolean updateStatus(long createdRoomId, String booked);
-List<Room> findByHotel(long hotelId);}
+List<Room> findByHotel(long hotelId);
+    List<Room> findAvailableRoomsByHotelAndDates(long hotelId, LocalDate checkIn, LocalDate checkOut) throws SQLException;}
 
 

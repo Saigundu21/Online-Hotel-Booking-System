@@ -5,6 +5,8 @@ import com.booking.hotel.dao.RoomDAOImpl;
 import com.booking.hotel.model.Room;
 
 import java.math.BigDecimal;
+import java.sql.SQLException;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -90,6 +92,16 @@ public class RoomServiceImpl implements RoomService {
         } catch (Exception e) {
             logger.log(Level.SEVERE, "Service failed to delete room ID: " + roomId, e);
             return false;
+        }
+    }
+
+    @Override
+    public List<Room> findAvailableRoomsByHotelAndDates(long hotelId, LocalDate checkIn, LocalDate checkOut) throws SQLException {
+        try {
+            return roomDAO.findAvailableRoomsByHotelAndDates(hotelId, checkIn, checkOut);
+        } catch (SQLException e) {
+            logger.log(Level.SEVERE, "Service failed to find available rooms", e);
+            throw e;
         }
     }
 

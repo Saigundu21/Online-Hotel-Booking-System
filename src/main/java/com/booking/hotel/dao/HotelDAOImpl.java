@@ -16,12 +16,11 @@ import java.util.logging.Logger;
 
 public class HotelDAOImpl implements HotelDAO {
 
-    // Records each hotel-table action. Messages are plain strings.
     private static final Logger logger = Logger.getLogger(HotelDAOImpl.class.getName());
 
     private static final String SQL_INSERT_HOTEL =
-            "INSERT INTO hotel (location_id, name, description, address, "
-                    + "star_rating, amenities, status) VALUES (?, ?, ?, ?, ?, ?, ?)";
+            "INSERT INTO hotel (location_id, name, description, address, city, "
+                    + "star_rating, amenities, status) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
 
     private static final String SQL_FIND_BY_ID =
             "SELECT * FROM hotel WHERE hotel_id = ?";
@@ -30,14 +29,13 @@ public class HotelDAOImpl implements HotelDAO {
             "SELECT * FROM hotel";
 
     private static final String SQL_UPDATE =
-            "UPDATE hotel SET location_id = ?, name = ?, description = ?, address = ?, "
+            "UPDATE hotel SET location_id = ?, name = ?, description = ?, address = ?, city = ?, "
                     + "star_rating = ?, amenities = ?, status = ? "
                     + "WHERE hotel_id = ?";
 
     private static final String SQL_DELETE =
             "DELETE FROM hotel WHERE hotel_id = ?";
 
-    // Inserts one row into the hotel table and stores the new hotel_id on the Hotel object.
     @Override
     public boolean create(Hotel hotel) throws SQLException {
         try (Connection connection = JdbcUtil.getConnection();
@@ -61,7 +59,6 @@ public class HotelDAOImpl implements HotelDAO {
         }
     }
 
-    // Selects the one hotel row whose hotel_id matches the given id.
     @Override
     public Hotel findById(long hotelId) throws SQLException {
         try (Connection connection = JdbcUtil.getConnection();
@@ -80,7 +77,6 @@ public class HotelDAOImpl implements HotelDAO {
         }
     }
 
-    // Selects every row from the hotel table.
     @Override
     public List<Hotel> findAll() throws SQLException {
         List<Hotel> hotels = new ArrayList<>();
@@ -102,14 +98,13 @@ public class HotelDAOImpl implements HotelDAO {
         return hotels;
     }
 
-    // Updates location, name, description, address, star_rating, amenities, and status for this hotel_id.
     @Override
     public boolean update(Hotel hotel) throws SQLException {
         try (Connection connection = JdbcUtil.getConnection();
              PreparedStatement statement = connection.prepareStatement(SQL_UPDATE)) {
 
             setHotelColumns(statement, hotel);
-            statement.setLong(8, hotel.getHotelId()); // 8th parameter for WHERE hotel_id = ?
+            statement.setLong(9, hotel.getHotelId()); // 9th parameter for WHERE hotel_id = ?
 
             logger.fine("Updating hotel with id " + hotel.getHotelId());
             int rows = statement.executeUpdate();
@@ -120,7 +115,6 @@ public class HotelDAOImpl implements HotelDAO {
         }
     }
 
-    // Deletes the hotel row whose hotel_id matches the given id.
     @Override
     public boolean delete(long hotelId) throws SQLException {
         try (Connection connection = JdbcUtil.getConnection();
@@ -136,7 +130,6 @@ public class HotelDAOImpl implements HotelDAO {
         }
     }
 
-    // Copies one hotel-table row into a Hotel. location_id is stored on a Location object.
     private Hotel mapRow(ResultSet resultSet) throws SQLException {
         Hotel hotel = new Hotel();
         hotel.setHotelId(resultSet.getLong("hotel_id"));
@@ -151,6 +144,7 @@ public class HotelDAOImpl implements HotelDAO {
         hotel.setName(resultSet.getString("name"));
         hotel.setDescription(resultSet.getString("description"));
         hotel.setAddress(resultSet.getString("address"));
+        hotel.setCity(resultSet.getString("city"));
         hotel.setStarRating(resultSet.getBigDecimal("star_rating"));
         hotel.setAmenities(resultSet.getString("amenities"));
         hotel.setStatus(resultSet.getString("status"));
@@ -166,8 +160,9 @@ public class HotelDAOImpl implements HotelDAO {
         statement.setString(2, hotel.getName());
         statement.setString(3, hotel.getDescription());
         statement.setString(4, hotel.getAddress());
-        statement.setBigDecimal(5, hotel.getStarRating());
-        statement.setString(6, hotel.getAmenities());
-        statement.setString(7, hotel.getStatus());
+        statement.setString(5, hotel.getCity());
+        statement.setBigDecimal(6, hotel.getStarRating());
+        statement.setString(7, hotel.getAmenities());
+        statement.setString(8, hotel.getStatus());
     }
 }

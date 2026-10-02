@@ -72,10 +72,8 @@ public class UserConsoleController {
         System.out.print("Enter Phone: ");
         String phone = scanner.nextLine();
 
-        System.out.print("Enter Role (CUSTOMER/ADMIN): ");
-        String role = scanner.nextLine();
-
-        User newUser = new User(0, name, email, password, phone, role, "ACTIVE");
+        // Role is securely fixed to CUSTOMER (preventing unauthorized Admin creation)
+        User newUser = new User(0, name, email, password, phone, "CUSTOMER", "ACTIVE");
         boolean success = userService.registerUser(newUser);
 
         if (success) {
@@ -106,7 +104,7 @@ public class UserConsoleController {
         List<User> users = userService.getAllUsers();
         System.out.println("\n--- ALL USERS (" + users.size() + ") ---");
         for (User u : users) {
-            System.out.println("ID: " + u.getUserId() + " | Name: " + u.getFullName() + " | Email: " + u.getEmail());
+            System.out.println("ID: " + u.getUserId() + " | Name: " + u.getFullName() + " | Email: " + u.getEmail() + " | Role: " + u.getRole());
         }
     }
 }

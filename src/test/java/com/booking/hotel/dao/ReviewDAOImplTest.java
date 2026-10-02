@@ -137,6 +137,7 @@ class ReviewDAOImplTest {
         hotel.setName("Hotel " + unique);
         hotel.setDescription("Test hotel");
         hotel.setAddress("1 Test Street");
+        hotel.setCity("Test City " + unique);
         hotel.setStarRating(new BigDecimal("4.5"));
         hotel.setAmenities("WiFi");
         hotel.setStatus("ACTIVE");
