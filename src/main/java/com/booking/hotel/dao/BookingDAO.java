@@ -2,9 +2,12 @@ package com.booking.hotel.dao;
 
 import com.booking.hotel.model.Booking;
 import java.sql.SQLException;
+import java.util.Date;
 import java.util.List;
 
 public interface BookingDAO {
+    boolean isRoomAvailable(long roomId, java.sql.Date checkIn, java.sql.Date checkOut) throws SQLException;
+
     boolean create(Booking booking) throws SQLException;
     Booking findById(long bookingId) throws SQLException;
     List<Booking> findByUserId(long userId) throws SQLException;
@@ -14,6 +17,9 @@ public interface BookingDAO {
     List<Booking> findByUser(long userId);
 
     boolean updateStatus(long BookingId, String status);
+    // NEW: Check if a room is available for the given dates
+    boolean isRoomAvailable(long roomId, Date checkIn, Date checkOut) throws SQLException;
+    
 
 }
 

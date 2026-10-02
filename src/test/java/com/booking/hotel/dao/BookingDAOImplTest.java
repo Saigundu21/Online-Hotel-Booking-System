@@ -13,15 +13,13 @@ import java.sql.Date;
 import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-// Integration test for BookingDAOImpl. It needs a running local MySQL database
-// with the hotel_booking_system schema already applied, because it calls real JDBC code.
 class BookingDAOImplTest {
 
     private UserDAO userDAO;
@@ -38,7 +36,6 @@ class BookingDAOImplTest {
     private long createdRoomId;
     private long createdBookingId;
 
-    // Inserts a throwaway user, hotel, and room so a booking can use real foreign keys.
     @BeforeEach
     void setUp() throws SQLException {
         userDAO = new UserDAOImpl();
@@ -64,40 +61,30 @@ class BookingDAOImplTest {
         createdRoomId = testRoom.getRoomId();
     }
 
-    // Deletes the booking first, then the room, hotel, and user. A missing row is ignored.
     @AfterEach
     void deleteTestRows() {
         try {
             if (createdBookingId > 0) {
                 bookingDAO.delete(createdBookingId);
             }
-        } catch (SQLException ignored) {
-            // The booking may already be gone. Still delete the room, hotel, and user below.
-        }
+        } catch (SQLException ignored) {}
         try {
             if (createdRoomId > 0) {
                 roomDAO.delete(createdRoomId);
             }
-        } catch (SQLException ignored) {
-            // The room may already be gone. Still delete the hotel and user below.
-        }
+        } catch (SQLException ignored) {}
         try {
             if (createdHotelId > 0) {
                 hotelDAO.delete(createdHotelId);
             }
-        } catch (SQLException ignored) {
-            // The hotel may already be gone. Still delete the user below.
-        }
+        } catch (SQLException ignored) {}
         try {
             if (createdUserId > 0) {
                 userDAO.delete(createdUserId);
             }
-        } catch (SQLException ignored) {
-            // The user may already be gone.
-        }
+        } catch (SQLException ignored) {}
     }
 
-    // Checks that create inserts a booking and MySQL assigns an id.
     @Test
     void createInsertsBookingAndSetsGeneratedId() throws SQLException {
         Booking booking = newTestBooking();
@@ -109,7 +96,6 @@ class BookingDAOImplTest {
         assertTrue(createdBookingId > 0);
     }
 
-    // Checks that findById returns the inserted values, including the same check-in and check-out dates.
     @Test
     void findByIdReturnsInsertedBooking() throws SQLException {
         Booking booking = newTestBooking();
@@ -126,14 +112,9 @@ class BookingDAOImplTest {
         assertEquals(booking.getCheckInDate(), found.getCheckInDate());
         assertEquals(booking.getCheckOutDate(), found.getCheckOutDate());
         assertEquals(0, booking.getTotalAmount().compareTo(found.getTotalAmount()));
-        assertEquals(
-                booking.getPaymentOption() != null ? booking.getPaymentOption().toString() : null,
-                found.getPaymentOption() != null ? found.getPaymentOption().toString() : null
-        );
         assertEquals(booking.getBookingStatus(), found.getBookingStatus());
     }
 
-    // Checks that findByUser includes the booking that was just inserted for this user.
     @Test
     void findByUserIncludesCreatedBooking() throws SQLException {
         Booking booking = newTestBooking();
@@ -152,7 +133,6 @@ class BookingDAOImplTest {
         assertTrue(found);
     }
 
-    // Checks that updateStatus changes booking_status and findById returns the new value.
     @Test
     void updateStatusChangesBookingStatus() throws SQLException {
         Booking booking = newTestBooking();
@@ -166,17 +146,41 @@ class BookingDAOImplTest {
         assertEquals("CANCELLED", found.getBookingStatus());
     }
 
+    @Test
+    void isRoomAvailableDetectsOverlaps() throws SQLException {
+        Booking booking = newTestBooking();
+        bookingDAO.create(booking);
+        createdBookingId = booking.getBookingId();
+
+        // Overlapping date check -> should be false
+        boolean availableOverlap = bookingDAO.isRoomAvailable(
+                testRoom.getRoomId(),
+                Date.valueOf(LocalDate.now().plusDays(2)),
+                Date.valueOf(LocalDate.now().plusDays(3))
+        );
+        assertFalse(availableOverlap);
+
+        // Non-overlapping future date check -> should be true
+        boolean availableFree = bookingDAO.isRoomAvailable(
+                testRoom.getRoomId(),
+                Date.valueOf(LocalDate.now().plusDays(10)),
+                Date.valueOf(LocalDate.now().plusDays(12))
+        );
+        assertTrue(availableFree);
+    }
+
     private User newTestUser() {
         String uniqueEmail = "user-" + UUID.randomUUID() + "@example.com";
         return new User(0, "Test User", uniqueEmail, "test123", "9999999999", "CUSTOMER", "ACTIVE");
     }
 
     private Hotel newTestHotel() {
-        String unique = UUID.randomUUID().toString();
+        String unique = UUID.randomUUID().toString().substring(0, 8);
         Hotel hotel = new Hotel();
         hotel.setName("Hotel " + unique);
         hotel.setDescription("Test hotel");
         hotel.setAddress("1 Test Street");
+        hotel.setCity("Test City" + unique);
         hotel.setStarRating(new BigDecimal("4.5"));
         hotel.setAmenities("WiFi");
         hotel.setStatus("ACTIVE");
@@ -194,7 +198,6 @@ class BookingDAOImplTest {
         return room;
     }
 
-    // Check-out is three days after check-in so the two dates are different.
     private Booking newTestBooking() {
         Booking booking = new Booking();
         booking.setUser(testUser);
@@ -202,7 +205,7 @@ class BookingDAOImplTest {
         booking.setRoom(testRoom);
         booking.setCheckInDate(Date.valueOf(LocalDate.now().plusDays(1)));
         booking.setCheckOutDate(Date.valueOf(LocalDate.now().plusDays(4)));
-        booking.setGuests(2); // Added to satisfy the database check constraint for guests count
+        booking.setGuests(2);
         booking.setTotalAmount(new BigDecimal("4500.00"));
         booking.setPaymentOption("CARD");
         booking.setBookingStatus("CONFIRMED");

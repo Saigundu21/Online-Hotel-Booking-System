@@ -5,6 +5,7 @@ import com.booking.hotel.model.Room;
 import com.booking.hotel.util.JdbcUtil;
 
 import java.sql.*;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
@@ -33,6 +34,40 @@ public class RoomDAOImpl implements RoomDAO {
 
     private static final String DELETE_SQL =
             "DELETE FROM room WHERE room_id = ?";
+
+    private static final String FIND_AVAILABLE_ROOMS_SQL =
+            "SELECT room_id, hotel_id, room_number, room_type, capacity, base_price, status " +
+                    "FROM room WHERE hotel_id = ? AND room_id NOT IN (" +
+                    "    SELECT room_id FROM booking " +
+                    "    WHERE booking_status != 'CANCELLED' " +
+                    "    AND check_in_date < ? AND check_out_date > ?" +
+                    ")";
+
+    @Override
+    public List<Room> findAvailableRoomsByHotelAndDates(long hotelId, LocalDate checkIn, LocalDate checkOut) throws SQLException {
+        List<Room> rooms = new ArrayList<>();
+
+        try (Connection conn = JdbcUtil.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(FIND_AVAILABLE_ROOMS_SQL)) {
+
+            stmt.setLong(1, hotelId);
+            stmt.setDate(2, Date.valueOf(checkOut)); // Requested check-out
+            stmt.setDate(3, Date.valueOf(checkIn));  // Requested check-in
+
+            logger.fine("Finding available rooms for hotel id=" + hotelId + " between " + checkIn + " and " + checkOut);
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    rooms.add(mapRow(rs));
+                }
+            }
+            return rooms;
+
+        } catch (SQLException e) {
+            logger.log(Level.SEVERE, "Failed to find available rooms for hotel id=" + hotelId, e);
+            throw e;
+        }
+    }
 
     @Override
     public boolean create(Room room) throws SQLException {
@@ -243,4 +278,3 @@ public class RoomDAOImpl implements RoomDAO {
         return room;
     }
 }
-

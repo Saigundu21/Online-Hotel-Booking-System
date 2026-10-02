@@ -69,6 +69,9 @@ public class HotelConsoleController {
         System.out.print("Enter Address: ");
         String address = scanner.nextLine();
 
+        System.out.print("Enter City: ");
+        String city = scanner.nextLine();
+
         System.out.print("Enter Star Rating (e.g., 4.5): ");
         BigDecimal rating = new BigDecimal(scanner.nextLine());
 
@@ -79,6 +82,7 @@ public class HotelConsoleController {
         hotel.setName(name);
         hotel.setDescription(description);
         hotel.setAddress(address);
+        hotel.setCity(city);
         hotel.setStarRating(rating);
         hotel.setAmenities(amenities);
         hotel.setStatus("ACTIVE");
@@ -100,7 +104,7 @@ public class HotelConsoleController {
             System.out.println("\n[Hotel Found]");
             System.out.println("ID: " + hotel.getHotelId());
             System.out.println("Name: " + hotel.getName());
-            System.out.println("Address: " + hotel.getAddress());
+            System.out.println("Address: " + hotel.getAddress() + ", " + hotel.getCity());
             System.out.println("Rating: " + hotel.getStarRating());
             System.out.println("Status: " + hotel.getStatus());
         } else {
@@ -112,8 +116,7 @@ public class HotelConsoleController {
         List<Hotel> hotels = hotelService.getAllHotels();
         System.out.println("\n--- ALL HOTELS (" + hotels.size() + ") ---");
         for (Hotel h : hotels) {
-            System.out.println("ID: " + h.getHotelId() + " | Name: " + h.getName() + " | Rating: " + h.getStarRating());
+            System.out.println("ID: " + h.getHotelId() + " | Name: " + h.getName() + " | City: " + h.getCity() + " | Rating: " + h.getStarRating());
         }
     }
 }
-

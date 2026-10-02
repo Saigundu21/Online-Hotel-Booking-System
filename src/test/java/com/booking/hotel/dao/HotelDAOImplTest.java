@@ -67,12 +67,13 @@ class HotelDAOImplTest {
         assertEquals(hotel.getName(), found.getName());
         assertEquals(hotel.getDescription(), found.getDescription());
         assertEquals(hotel.getAddress(), found.getAddress());
+        assertEquals(hotel.getCity(), found.getCity());
         assertEquals(0, hotel.getStarRating().compareTo(found.getStarRating()));
         assertEquals(hotel.getAmenities(), found.getAmenities());
         assertEquals(hotel.getStatus(), found.getStatus());
     }
 
-    // Checks that findByCity includes the hotel that was just inserted in that city.
+    // Checks that findAll includes the hotel that was just inserted.
     @Test
     void findByCityIncludesCreatedHotel() throws SQLException {
         Hotel hotel = newTestHotel();
@@ -86,18 +87,20 @@ class HotelDAOImplTest {
             if (candidate.getHotelId() == createdHotelId) {
                 found = true;
                 assertEquals(hotel.getName(), candidate.getName());
+                assertEquals(hotel.getCity(), candidate.getCity());
             }
         }
         assertTrue(found);
     }
 
-    // Builds a hotel whose name and city cannot collide with rows already in the table.
+    // Builds a hotel whose name and unique fields cannot collide with rows already in the table.
     private Hotel newTestHotel() {
-        String unique = UUID.randomUUID().toString();
+        String unique = UUID.randomUUID().toString().substring(0, 8);
         Hotel hotel = new Hotel();
         hotel.setName("Hotel " + unique);
         hotel.setDescription("Test hotel");
         hotel.setAddress("1 Test Street");
+        hotel.setCity("Test City " + unique);
         hotel.setStarRating(new BigDecimal("4.5"));
         hotel.setAmenities("WiFi");
         hotel.setStatus("ACTIVE");

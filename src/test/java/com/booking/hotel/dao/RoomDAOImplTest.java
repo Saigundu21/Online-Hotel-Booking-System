@@ -1,65 +1,77 @@
 package com.booking.hotel.dao;
 
+import com.booking.hotel.model.Booking;
 import com.booking.hotel.model.Hotel;
 import com.booking.hotel.model.Room;
+import com.booking.hotel.model.User;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.math.BigDecimal;
+import java.sql.Date;
 import java.sql.SQLException;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-// Integration test for RoomDAOImpl. It needs a running local MySQL database
-// with the hotel_booking_system schema already applied, because it calls real JDBC code.
 class RoomDAOImplTest {
 
     private HotelDAO hotelDAO;
     private RoomDAO roomDAO;
+    private UserDAO userDAO;
+    private BookingDAO bookingDAO;
 
     private Hotel testHotel;
+    private User testUser;
 
     private long createdHotelId;
     private long createdRoomId;
+    private long createdUserId;
+    private long createdBookingId;
 
-    // Inserts a throwaway hotel so a room can use a real hotel_id.
     @BeforeEach
     void setUp() throws SQLException {
         hotelDAO = new HotelDAOImpl();
         roomDAO = new RoomDAOImpl();
+        userDAO = new UserDAOImpl();
+        bookingDAO = new BookingDAOImpl();
+
         createdHotelId = 0;
         createdRoomId = 0;
+        createdUserId = 0;
+        createdBookingId = 0;
 
         testHotel = newTestHotel();
         hotelDAO.create(testHotel);
         createdHotelId = testHotel.getHotelId();
+
+        testUser = newTestUser();
+        userDAO.create(testUser);
+        createdUserId = testUser.getUserId();
     }
 
-    // Deletes the room first, then the hotel. A missing row is ignored.
     @AfterEach
     void deleteTestRows() {
         try {
-            if (createdRoomId > 0) {
-                roomDAO.delete(createdRoomId);
-            }
-        } catch (SQLException ignored) {
-            // The room may already be gone. Still delete the hotel below.
-        }
+            if (createdBookingId > 0) bookingDAO.delete(createdBookingId);
+        } catch (SQLException ignored) {}
         try {
-            if (createdHotelId > 0) {
-                hotelDAO.delete(createdHotelId);
-            }
-        } catch (SQLException ignored) {
-            // The hotel may already be gone.
-        }
+            if (createdRoomId > 0) roomDAO.delete(createdRoomId);
+        } catch (SQLException ignored) {}
+        try {
+            if (createdHotelId > 0) hotelDAO.delete(createdHotelId);
+        } catch (SQLException ignored) {}
+        try {
+            if (createdUserId > 0) userDAO.delete(createdUserId);
+        } catch (SQLException ignored) {}
     }
 
-    // Checks that create inserts a room and MySQL assigns an id.
     @Test
     void createInsertsRoomAndSetsGeneratedId() throws SQLException {
         Room room = newTestRoom();
@@ -71,7 +83,6 @@ class RoomDAOImplTest {
         assertTrue(createdRoomId > 0);
     }
 
-    // Checks that findById returns the same values that were inserted.
     @Test
     void findByIdReturnsInsertedRoom() throws SQLException {
         Room room = newTestRoom();
@@ -90,7 +101,6 @@ class RoomDAOImplTest {
         assertEquals(room.getStatus(), found.getStatus());
     }
 
-    // Checks that findByHotel includes the room that was just inserted for this hotel.
     @Test
     void findByHotelIncludesCreatedRoom() throws SQLException {
         Room room = newTestRoom();
@@ -110,7 +120,6 @@ class RoomDAOImplTest {
         assertTrue(found);
     }
 
-    // Checks that updateStatus changes the status and findById returns the new value.
     @Test
     void updateStatusChangesRoomStatus() throws SQLException {
         Room room = newTestRoom();
@@ -124,19 +133,58 @@ class RoomDAOImplTest {
         assertEquals("BOOKED", found.getStatus());
     }
 
+    @Test
+    void findAvailableRoomsByHotelAndDatesExcludesBookedRooms() throws SQLException {
+        Room room = newTestRoom();
+        roomDAO.create(room);
+        createdRoomId = room.getRoomId();
+
+        Booking booking = new Booking();
+        booking.setUser(testUser);
+        booking.setHotel(testHotel);
+        booking.setRoom(room);
+        booking.setCheckInDate(Date.valueOf(LocalDate.now().plusDays(1)));
+        booking.setCheckOutDate(Date.valueOf(LocalDate.now().plusDays(4)));
+        booking.setGuests(2);
+        booking.setTotalAmount(new BigDecimal("4500.00"));
+        booking.setPaymentOption("CARD");
+        booking.setBookingStatus("CONFIRMED");
+
+        bookingDAO.create(booking);
+        createdBookingId = booking.getBookingId();
+
+        // During booking dates -> should be excluded
+        List<Room> busyRooms = roomDAO.findAvailableRoomsByHotelAndDates(
+                testHotel.getHotelId(),
+                LocalDate.now().plusDays(2),
+                LocalDate.now().plusDays(3)
+        );
+        boolean roomFound = busyRooms.stream().anyMatch(r -> r.getRoomId() == room.getRoomId());
+        assertFalse(roomFound, "Booked room should not be available during overlapping dates.");
+
+        // Future unbooked dates -> should be included
+        List<Room> freeRooms = roomDAO.findAvailableRoomsByHotelAndDates(
+                testHotel.getHotelId(),
+                LocalDate.now().plusDays(10),
+                LocalDate.now().plusDays(12)
+        );
+        boolean freeRoomFound = freeRooms.stream().anyMatch(r -> r.getRoomId() == room.getRoomId());
+        assertTrue(freeRoomFound, "Room should be available on non-overlapping future dates.");
+    }
+
     private Hotel newTestHotel() {
-        String unique = UUID.randomUUID().toString();
+        String unique = UUID.randomUUID().toString().substring(0, 8);
         Hotel hotel = new Hotel();
         hotel.setName("Hotel " + unique);
         hotel.setDescription("Test hotel");
         hotel.setAddress("1 Test Street");
+        hotel.setCity("Test City" + unique);
         hotel.setStarRating(new BigDecimal("4.5"));
         hotel.setAmenities("WiFi");
         hotel.setStatus("ACTIVE");
         return hotel;
     }
 
-    // room_number is limited to 20 characters, so only part of the UUID is used.
     private Room newTestRoom() {
         Room room = new Room();
         room.setHotel(testHotel);
@@ -147,5 +195,9 @@ class RoomDAOImplTest {
         room.setStatus("AVAILABLE");
         return room;
     }
-}
 
+    private User newTestUser() {
+        String uniqueEmail = "user-" + UUID.randomUUID() + "@example.com";
+        return new User(0, "Test User", uniqueEmail, "test123", "9999999999", "CUSTOMER", "ACTIVE");
+    }
+}

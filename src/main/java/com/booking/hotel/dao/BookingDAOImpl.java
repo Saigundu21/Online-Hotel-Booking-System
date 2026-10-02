@@ -33,9 +33,35 @@ public class BookingDAOImpl implements BookingDAO {
             "UPDATE booking SET user_id = ?, hotel_id = ?, room_id = ?, " +
                     "check_in_date = ?, check_out_date = ?, guests = ?, " +
                     "total_amount = ?, booking_status = ?, payment_option = ? WHERE booking_id = ?";
+    private static final String CHECK_AVAILABILITY_SQL =
+            "SELECT COUNT(*) FROM booking " +
+                    "WHERE room_id = ? AND booking_status != 'CANCELLED' " +
+                    "AND check_in_date < ? AND check_out_date > ?";
 
     private static final String DELETE_SQL =
             "DELETE FROM booking WHERE booking_id = ?";
+
+    @Override
+    public boolean isRoomAvailable(long roomId, Date checkIn, Date checkOut) throws SQLException {
+        try (Connection conn = JdbcUtil.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(CHECK_AVAILABILITY_SQL)) {
+
+            stmt.setLong(1, roomId);
+            stmt.setDate(2, checkOut); // New check-out date
+            stmt.setDate(3, checkIn);  // New check-in date
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt(1) == 0; // Returns true if 0 overlapping bookings exist
+                }
+            }
+            return false;
+        } catch (SQLException e) {
+            logger.log(Level.SEVERE, "Failed to check room availability for id=" + roomId, e);
+            throw e;
+        }
+    }
+
 
     @Override
     public boolean create(Booking booking) throws SQLException {
@@ -240,6 +266,11 @@ public class BookingDAOImpl implements BookingDAO {
             logger.log(Level.SEVERE, "Failed to update booking status for id=" + bookingId, e);
             return false;
         }
+    }
+
+    @Override
+    public boolean isRoomAvailable(long roomId, java.util.Date checkIn, java.util.Date checkOut) throws SQLException {
+        return false;
     }
 
     private Booking mapRow(ResultSet rs) throws SQLException {
